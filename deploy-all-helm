@@ -1,0 +1,3 @@
+#!/bin/bash
+
+helm install riffrepo/riff --name demo --values helm/values-snapshot.yaml --set httpGateway.service.type=NodePort

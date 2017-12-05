@@ -7,7 +7,7 @@ riff is for functions
 
 Commands:
   build        Build a function container
-  create       Create function resource definitions
+  create       Build and apply a function given code
   apply        Apply function resource definitions
   delete       Delete function resource definitions
   list         List current function resources
@@ -44,7 +44,24 @@ Create the resource[s] based on the resource definition[s] that the path points 
 
 Usage:
 
-  riff create -f <path>
+  riff create -f <path> -i <invoker>
+
+Options:
+
+  -f, --filename: filename of the function code
+  -i, --invoker: name of the function invoker to use
+
+EOF
+}
+
+function print_update_usage() {
+cat <<EOF
+
+Delete the function and re-apply its configuration.
+
+Usage:
+
+  riff update -f <path>
 
 Options:
 
@@ -122,8 +139,71 @@ function build() {
 }
 
 function create() {
-  echo "Creating $FNPATH resource[s]"
-  kubectl create -f $FNPATH
+  if [[ "$INVOKER" == "detect" ]]
+  then
+    detect_invoker
+  fi
+  echo "Creating $INVOKER function for $FNPATH"
+  create_dockerfile
+  create_function_yaml
+  docker build -t "projectriff/${FUNCTION}:${VERSION}" .
+  kubectl apply -f $FUNCTION.yaml
+}
+
+function detect_invoker() {
+  if [[ "$FNPATH" == *.sh ]]
+  then
+    INVOKER="shell"
+  elif [[ "$FNPATH" == *.js ]]
+  then
+    INVOKER="node"
+  else
+    echo "unable to determine invoker type"
+    exit 1
+  fi
+}
+
+function create_dockerfile() {
+cat > Dockerfile <<EOF
+FROM projectriff/$INVOKER-function-invoker:0.0.2-snapshot
+ENV FUNCTION_URI /$FNPATH
+ADD $FNPATH /$FNPATH
+EOF
+cat > .dockerignore <<EOF
+*
+!$FNPATH
+EOF
+}
+
+function create_function_yaml() {
+  PROTOCOL="http"
+  if [[ "${INVOKER}" == "shell" ]]; then
+    PROTOCOL="stdio"
+  fi
+cat > $FUNCTION.yaml <<EOF
+apiVersion: projectriff.io/v1
+kind: Topic
+metadata:
+  name: $FUNCTION
+spec:
+  partitions: 1
+---
+apiVersion: projectriff.io/v1
+kind: Function
+metadata:
+  name: $FUNCTION
+spec:
+  protocol: $PROTOCOL
+  input: $FUNCTION
+  container:
+    image: projectriff/$FUNCTION:v0001
+EOF
+}
+
+function update() {
+  delete >/dev/null
+  apply >/dev/null
+  echo "Updated $FUNCTION"
 }
 
 function apply() {
@@ -168,6 +248,9 @@ if [[ $1 == "--help" || $1 == "-h" ]] ; then
   elif [[ "${COMMAND}" == "create" ]]; then
     print_create_usage
     exit 0
+  elif [[ "${COMMAND}" == "update" ]]; then
+    print_update_usage
+    exit 0
   elif [[ "${COMMAND}" == "apply" ]]; then
     print_apply_usage
     exit 0
@@ -193,6 +276,10 @@ case ${key} in
   ;;
   -f|--filename)
   FNPATH="$2"
+  shift
+  ;;
+  -i|--invoker)
+  INVOKER="$2"
   shift
   ;;
   -v|--version)
@@ -223,6 +310,7 @@ done
 # ======================================= DEFAULTS ============================================
 FUNCTION="${FUNCTION:-${PWD##*/}}"
 FNPATH="${FNPATH:-.}"
+INVOKER="${INVOKER:-detect}"
 VERSION="${VERSION:-v0001}"
 CONTAINER="${CONTAINER:-sidecar}"
 # ======================================= DEFAULTS END ========================================
@@ -230,6 +318,8 @@ if [[ "${COMMAND}" == "build" ]]; then
   build
 elif [[ "${COMMAND}" == "create" ]]; then
   create
+elif [[ "${COMMAND}" == "update" ]]; then
+  update
 elif [[ "${COMMAND}" == "apply" ]]; then
   apply
 elif [[ "${COMMAND}" == "delete" ]]; then

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+eval $(minikube docker-env)
+
+# only build model when necessary
+#./build-model upstream riff
+./build-function-sidecar upstream master
+./build-http-gateway upstream master
+./build-topic-controller upstream master
+./build-function-controller upstream master
+
+./build-java-function-invoker upstream master
+./build-node-function-invoker upstream master
+./build-shell-function-invoker upstream master
+./build-python2-function-invoker upstream master
