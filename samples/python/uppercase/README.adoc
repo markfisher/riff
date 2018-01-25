@@ -6,32 +6,32 @@
 *Protocol*:: gRPC
 *Input*:: greetings
 
-=== Build the image
+=== prerequisites
+
+1. riff is deployed
+2. the `riff` script is on your PATH
+3. the working directory is `samples/python/uppercase`
+
+=== build the image
 
 ```
-pushd samples/python/uppercase; ./dockerize ; popd
+./dockerize
 ```
 
-=== Create the Function and Topic(s)
+=== create the function and its input topic
 
 ```
-./riff apply -f samples/python/uppercase
+riff apply
 ```
 
-=== Publish a Message to the Input Topic
+=== publish a message and wait for a reply
 
 ```
-./request greetings hello
+riff publish --input greetings --data hello --reply
 ```
 
-=== Tail the Sidecar Log
+=== delete the function and its input topic
 
 ```
-./riff logs -n uppercase -t
-```
-
-=== Delete the function
-
-```
-./riff delete -n uppercase
+riff delete --all
 ```
