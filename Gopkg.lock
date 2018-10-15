@@ -522,6 +522,21 @@
   version = "v1.0.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:4579e17232bca74c1f77e3cd8d0d9b66b680592ecaccd29ac2af905ee30c2469"
+  name = "github.com/projectriff/stream-controller"
+  packages = [
+    "pkg/apis/streamcontroller",
+    "pkg/apis/streamcontroller/v1alpha1",
+    "pkg/client/clientset/versioned",
+    "pkg/client/clientset/versioned/scheme",
+    "pkg/client/clientset/versioned/typed/streamcontroller/v1alpha1",
+  ]
+  pruneopts = "NUT"
+  revision = "f866d58ce2df0c394eb96e513fbb5859c9bfe319"
+  source = "https://github.com/markfisher/stream-controller-poc"
+
+[[projects]]
   digest = "1:bcfa8e184764796499312e55cd8a5fff63896eca0d6faff6b6e43ac6a98a498a"
   name = "github.com/russross/blackfriday"
   packages = ["."]
@@ -865,6 +880,8 @@
     "github.com/onsi/gomega",
     "github.com/onsi/gomega/gstruct",
     "github.com/pkg/errors",
+    "github.com/projectriff/stream-controller/pkg/apis/streamcontroller/v1alpha1",
+    "github.com/projectriff/stream-controller/pkg/client/clientset/versioned",
     "github.com/spf13/cobra",
     "github.com/spf13/cobra/doc",
     "github.com/stretchr/testify/mock",

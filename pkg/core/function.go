@@ -30,7 +30,8 @@ import (
 	"github.com/boz/kcache/types/pod"
 	"github.com/buildpack/pack"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
-	"github.com/knative/serving/pkg/apis/serving/v1alpha1"
+	servingv1alpha1 "github.com/knative/serving/pkg/apis/serving/v1alpha1"
+	functionsv1alpha1 "github.com/projectriff/stream-controller/pkg/apis/streamcontroller/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -59,7 +60,7 @@ type CreateFunctionOptions struct {
 	Artifact string
 }
 
-func (c *client) CreateFunction(options CreateFunctionOptions, log io.Writer) (*v1alpha1.Service, error) {
+func (c *client) CreateFunction(options CreateFunctionOptions, log io.Writer) (*servingv1alpha1.Service, error) {
 	ns := c.explicitOrConfigNamespace(options.Namespace)
 
 	s, err := newService(options.CreateOrReviseServiceOptions)
@@ -346,10 +347,10 @@ func (c *client) waitForSuccessOrFailure(namespace string, name string, gen int6
 	return nil
 }
 
-func serviceConditionsMessage(conds []v1alpha1.ServiceCondition, primaryMessage string) string {
+func serviceConditionsMessage(conds []servingv1alpha1.ServiceCondition, primaryMessage string) string {
 	msg := []string{primaryMessage}
 	for _, cond := range conds {
-		if cond.Status == corev1.ConditionFalse && cond.Type != v1alpha1.ServiceConditionReady && cond.Message != primaryMessage {
+		if cond.Status == corev1.ConditionFalse && cond.Type != servingv1alpha1.ServiceConditionReady && cond.Message != primaryMessage {
 			msg = append(msg, cond.Message)
 		}
 	}
@@ -494,4 +495,35 @@ func (c *client) BuildFunction(options BuildFunctionOptions, log io.Writer) erro
 // images that will pull from the Docker deamon instead of a registry.
 func publishImage(image string) bool {
 	return strings.Index(image, "dev.local/") != 0 && strings.Index(image, "ko.local/") != 0
+}
+
+type RegisterFunctionOptions struct {
+	Namespace string
+	Name      string
+	Artifact  string
+	Repo      string
+	Image     string
+}
+
+func (c *client) RegisterFunction(options RegisterFunctionOptions, log io.Writer) error {
+	ns := c.explicitOrConfigNamespace(options.Namespace)
+
+	function := &functionsv1alpha1.Function{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      options.Name,
+			Namespace: ns,
+		},
+		Spec: functionsv1alpha1.FunctionSpec{
+			Image:    options.Image,
+			Repo:     options.Repo,
+			Artifact: options.Artifact,
+		},
+	}
+
+	_, err := c.streams.ProjectriffV1alpha1().Functions(ns).Create(function)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -25,13 +25,17 @@ import (
 	"github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	serving_cs "github.com/knative/serving/pkg/client/clientset/versioned"
+	streams_cs "github.com/projectriff/stream-controller/pkg/client/clientset/versioned"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
 type Client interface {
+	CreateStream(options CreateStreamOptions, log io.Writer) error
+
 	CreateFunction(options CreateFunctionOptions, log io.Writer) (*serving.Service, error)
 	BuildFunction(options BuildFunctionOptions, log io.Writer) error
+	RegisterFunction(options RegisterFunctionOptions, log io.Writer) error
 
 	CreateSubscription(options CreateSubscriptionOptions) (*eventing.Subscription, error)
 	DeleteSubscription(options DeleteSubscriptionOptions) error
@@ -50,12 +54,14 @@ type Client interface {
 }
 
 type client struct {
-	kubeClient   kubernetes.Interface
-	eventing     eventing_cs.Interface
-	serving      serving_cs.Interface
+	kubeClient kubernetes.Interface
+	eventing   eventing_cs.Interface
+	serving    serving_cs.Interface
+	streams    streams_cs.Interface
+
 	clientConfig clientcmd.ClientConfig
 }
 
-func NewClient(clientConfig clientcmd.ClientConfig, kubeClient kubernetes.Interface, eventing eventing_cs.Interface, serving serving_cs.Interface) Client {
-	return &client{clientConfig: clientConfig, kubeClient: kubeClient, eventing: eventing, serving: serving}
+func NewClient(clientConfig clientcmd.ClientConfig, kubeClient kubernetes.Interface, eventing eventing_cs.Interface, serving serving_cs.Interface, streams streams_cs.Interface) Client {
+	return &client{clientConfig: clientConfig, kubeClient: kubeClient, eventing: eventing, serving: serving, streams: streams}
 }

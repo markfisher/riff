@@ -34,6 +34,11 @@ const (
 	functionBuildNumberOfArgs
 )
 
+const (
+	functionRegisterFunctionNameIndex = iota
+	functionRegisterNumberOfArgs
+)
+
 func Function() *cobra.Command {
 	return &cobra.Command{
 		Use:   "function",
@@ -186,6 +191,41 @@ func FunctionBuild(fcTool *core.Client) *cobra.Command {
 	command.Flags().StringVarP(&buildFunctionOptions.LocalPath, "local-path", "l", "", "path to local source to build the image from")
 	command.Flags().BoolVarP(&buildFunctionOptions.Verbose, "verbose", "v", false, verboseUsage)
 	command.Flags().BoolVarP(&buildFunctionOptions.Wait, "wait", "w", false, waitUsage)
+
+	return command
+}
+
+func FunctionRegister(fcTool *core.Client) *cobra.Command {
+
+	registerFunctionOptions := core.RegisterFunctionOptions{}
+
+	command := &cobra.Command{
+		Use:     "register",
+		Short:   "Register a repo or image for a function resource",
+		Example: `  riff function register square --image=example/square:v1`,
+		Args: ArgValidationConjunction(
+			cobra.ExactArgs(functionRegisterNumberOfArgs),
+			AtPosition(functionRegisterFunctionNameIndex, ValidName()),
+		),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			fnName := args[functionRegisterFunctionNameIndex]
+			registerFunctionOptions.Name = fnName
+			err := (*fcTool).RegisterFunction(registerFunctionOptions, cmd.OutOrStdout())
+			if err != nil {
+				return err
+			}
+			PrintSuccessfulCompletion(cmd)
+			return nil
+		},
+	}
+
+	LabelArgs(command, "FUNCTION_NAME")
+
+	command.Flags().StringVarP(&registerFunctionOptions.Namespace, "namespace", "n", "", "the `namespace` of the function")
+	command.Flags().StringVar(&registerFunctionOptions.Image, "image", "", "the name of the image for this function")
+	command.MarkFlagRequired("image")
+	command.Flags().StringVar(&registerFunctionOptions.Repo, "repo", "", "the `URL` for a git repository hosting the function code")
+	command.Flags().StringVar(&registerFunctionOptions.Artifact, "artifact", "", "the name of the function artifact")
 
 	return command
 }

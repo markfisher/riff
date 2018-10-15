@@ -45,6 +45,11 @@
   name = "k8s.io/client-go"
   version = "kubernetes-1.11.0"
 
+[[constraint]]
+  name = "github.com/projectriff/stream-controller"
+  source = "https://github.com/markfisher/stream-controller-poc"
+  branch = "master"
+
 [[override]]
   name = "github.com/golang/protobuf"
   version = "v1.1.0"
