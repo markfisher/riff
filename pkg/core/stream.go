@@ -49,3 +49,27 @@ func (c *client) CreateStream(options CreateStreamOptions, log io.Writer) error 
 
 	return nil
 }
+
+type UpdateStreamOptions struct {
+	Namespace  string
+	Name       string
+	Definition string
+}
+
+func (c *client) UpdateStream(options UpdateStreamOptions, log io.Writer) error {
+	ns := c.explicitOrConfigNamespace(options.Namespace)
+
+	stream, err := c.streams.ProjectriffV1alpha1().Streams(ns).Get(options.Name, v1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	stream.Spec.Definition = options.Definition
+
+	_, err = c.streams.ProjectriffV1alpha1().Streams(ns).Update(stream)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

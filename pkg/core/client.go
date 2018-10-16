@@ -32,6 +32,7 @@ import (
 
 type Client interface {
 	CreateStream(options CreateStreamOptions, log io.Writer) error
+	UpdateStream(options UpdateStreamOptions, log io.Writer) error
 
 	CreateFunction(options CreateFunctionOptions, log io.Writer) (*serving.Service, error)
 	BuildFunction(options BuildFunctionOptions, log io.Writer) error

@@ -123,6 +123,7 @@ See https://projectriff.io and https://github.com/knative/docs`,
 	installKubeConfigSupport(stream, &client, &kc)
 	stream.AddCommand(
 		StreamCreate(&client),
+		StreamUpdate(&client),
 	)
 
 	function := Function()

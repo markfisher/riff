@@ -26,6 +26,11 @@ const (
 	streamCreateNumberOfArgs
 )
 
+const (
+	streamUpdateStreamNameIndex = iota
+	streamUpdateNumberOfArgs
+)
+
 func Stream() *cobra.Command {
 	return &cobra.Command{
 		Use:   "stream",
@@ -59,8 +64,41 @@ func StreamCreate(fcTool *core.Client) *cobra.Command {
 
 	LabelArgs(command, "STREAM_NAME")
 
-	command.Flags().StringVarP(&createStreamOptions.Namespace, "namespace", "n", "", "the `namespace` of the service")
+	command.Flags().StringVarP(&createStreamOptions.Namespace, "namespace", "n", "", "the `namespace` of the stream")
 	command.Flags().StringVar(&createStreamOptions.Definition, "definition", "", "the definition of the stream")
+	command.MarkFlagRequired("definition")
+
+	return command
+}
+
+func StreamUpdate(fcTool *core.Client) *cobra.Command {
+	updateStreamOptions := core.UpdateStreamOptions{}
+
+	command := &cobra.Command{
+		Use:     "update",
+		Short:   "Update an existing stream resource",
+		Long:    "Update an existing stream resource's definition\n",
+		Example: `  riff stream update mystream --definition "foo | bar --x=1"`,
+		Args: ArgValidationConjunction(
+			cobra.ExactArgs(streamUpdateNumberOfArgs),
+			AtPosition(streamUpdateStreamNameIndex, ValidName()),
+		),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			streamName := args[streamUpdateStreamNameIndex]
+			updateStreamOptions.Name = streamName
+			err := (*fcTool).UpdateStream(updateStreamOptions, cmd.OutOrStdout())
+			if err != nil {
+				return err
+			}
+			PrintSuccessfulCompletion(cmd)
+			return nil
+		},
+	}
+
+	LabelArgs(command, "STREAM_NAME")
+
+	command.Flags().StringVarP(&updateStreamOptions.Namespace, "namespace", "n", "", "the `namespace` of the stream")
+	command.Flags().StringVar(&updateStreamOptions.Definition, "definition", "", "the definition of the stream")
 	command.MarkFlagRequired("definition")
 
 	return command
